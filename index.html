@@ -1,238 +1,190 @@
-<!doctype html>
-<html lang="zh-CN">
+<!DOCTYPE html>
+<html lang="zh">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>孤岛生存 - 简易版</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>肉鸽扑克牌 - 地形与生态系统</title>
   <style>
-    :root{--bg:#f7f7f7;--panel:#fff;--accent:#6bb07a}
-    body{font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,"Helvetica Neue",Arial;margin:0;background:var(--bg);color:#222}
-    .top{background:var(--panel);padding:10px 14px;border-bottom:1px solid #e6e6e6;display:flex;align-items:center;gap:18px}
-    .stats{display:flex;gap:10px;align-items:center}
-    .stat{font-size:13px}
-    .container{max-width:960px;margin:18px auto;padding:14px}
-    .map{display:grid;grid-template-columns:repeat(11,36px);grid-auto-rows:36px;gap:2px;background:#ddd;padding:6px;border-radius:6px}
-    .cell{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:4px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,0.02) inset}
-    .cell.grass{background:#d9f0d9}
-    .cell.desert{background:#fff0c2}
-    .cell.mountain{background:#f0e6d9;color:#8b5}
-    .cell.wall{background:#e6e6e6}
-    .cell.water{background:#dff0ff}
-    .cell.player{background:#55a; color:#fff}
-    .controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-    button{padding:8px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;cursor:pointer}
-    button.primary{background:var(--accent);color:#fff;border-color:transparent}
-    .log{margin-top:12px;background:#fff;padding:10px;border-radius:6px;min-height:80px;max-height:180px;overflow:auto;font-size:13px}
-    .resources{display:flex;gap:8px;margin-top:12px}
-    .resource{background:#fff;padding:6px 8px;border-radius:6px;border:1px solid #eee}
-    @media (max-width:520px){.map{grid-template-columns:repeat(11,28px);grid-auto-rows:28px}.cell{width:28px;height:28px;font-size:10px}}
+    body { font-family: sans-serif; margin: 0; background: #1b1b1b; color: #fff; }
+    h1 { text-align: center; padding: 20px; }
+    #biome-list { display: flex; flex-wrap: wrap; padding: 10px; gap: 10px; justify-content: center; }
+    .biome-btn {
+      padding: 15px 20px;
+      background: #333;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.2s;
+      border: 1px solid #555;
+    }
+    .biome-btn:hover { background: #444; }
+    #info-panel {
+      margin: 20px auto;
+      padding: 20px;
+      width: min(600px, 90%);
+      background: #222;
+      border-radius: 12px;
+      border: 1px solid #555;
+    }
+    .section { margin-top: 10px; }
+    .label { color: #7ddcff; }
   </style>
 </head>
 <body>
-  <div class="top">
-    <div style="font-weight:700">孤岛生存（简易）</div>
-    <div class="stats">
-      <div class="stat">LV: <span id="lv">1</span></div>
-      <div class="stat">HP: <span id="hp">100</span>/100</div>
-      <div class="stat">饥饿: <span id="hung">100</span>/100</div>
-      <div class="stat">水分: <span id="water">100</span>/100</div>
-      <div class="stat">负重: <span id="load">0</span>/20</div>
-    </div>
-  </div>
+  <h1>地形生态系统地形信息面板</h1>
 
-  <div class="container">
-    <div style="display:flex;gap:18px;align-items:flex-start">
-      <div>
-        <div class="map" id="map"></div>
-        <div class="controls">
-          <button id="up">↑</button>
-          <button id="left">←</button>
-          <button id="down">↓</button>
-          <button id="right">→</button>
-          <button id="explore">探索</button>
-          <button id="gather">采集</button>
-          <button id="save">保存</button>
-          <button id="load">读取</button>
-        </div>
-      </div>
-      <div style="flex:1;min-width:220px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:600">信息面板</div>
-          <div style="font-size:12px;color:#666">使用方向键或按钮移动</div>
-        </div>
-        <div class="resources" id="resources"></div>
-        <div class="log" id="log"></div>
-      </div>
-    </div>
+  <div id="biome-list"></div>
+
+  <div id="info-panel">
+    <h2 id="biome-name">请选择一个地形</h2>
+    <div class="section"><span class="label">友好生物：</span><span id="friendly"></span></div>
+    <div class="section"><span class="label">敌对生物：</span><span id="hostile"></span>（点击敌对生物进入战斗）</div>
+    <div class="section"><span class="label">矿物自然资源：</span><span id="resources"></span></div>
   </div>
 
 <script>
-  // 简易游戏数据
-  const SIZE = 11;
-  const mapEl = document.getElementById('map');
-  const logEl = document.getElementById('log');
-  const resourcesEl = document.getElementById('resources');
-
-  const types = ['grass','desert','mountain','water','wall'];
-
-  let state = {
-    player:{x:Math.floor(SIZE/2),y:Math.floor(SIZE/2)},
-    hp:100,hunger:100,water:100,lv:1,load:0,inventory:{'草':3},
-    tiles:[],time:0
-  };
-
-  function randChoice(arr){return arr[Math.floor(Math.random()*arr.length)];}
-
-  function genMap(seed=false){
-    const tiles = [];
-    for(let y=0;y<SIZE;y++){
-      const row = [];
-      for(let x=0;x<SIZE;x++){
-        let t = 'grass';
-        const d = Math.abs(x-SIZE/2)+Math.abs(y-SIZE/2);
-        if(d>5 && Math.random()<0.6) t = randChoice(types);
-        else if(Math.random()<0.12) t = 'mountain';
-        if(x===state.player.x && y===state.player.y) t='player';
-        row.push({type:t,items:generateItemsFor(t)});
-      }
-      tiles.push(row);
-    }
-    return tiles;
+const biomes = {
+  "森林": {
+    friendly: ["鹿", "兔子", "蜂群"],
+    hostile: ["狼", "巨型蜘蛛"],
+    resources: ["木材", "蘑菇", "树脂"]
+  },
+  "沙漠": {
+    friendly: ["沙狐", "仙人掌精灵"],
+    hostile: ["沙虫", "盗匪"],
+    resources: ["沙子", "仙人掌", "化石碎片"]
+  },
+  "雪原": {
+    friendly: ["雪兔", "驯鹿"],
+    hostile: ["雪怪", "冰狼"],
+    resources: ["冰晶矿", "冷杉木"]
+  },
+  "沼泽": {
+    friendly: ["小蜥蜴", "萤火虫群"],
+    hostile: ["腐沼怪", "毒蛇"],
+    resources: ["湿地泥", "药草", "苔藓矿"]
+  },
+  "山地": {
+    friendly: ["山羊", "鹰"],
+    hostile: ["巨岩人", "山贼"],
+    resources: ["铁矿", "银矿", "花岗岩"]
+  },
+  "平原": {
+    friendly: ["牛", "羊", "野马"],
+    hostile: ["野狗", "夜行者"],
+    resources: ["草药", "土壤矿", "陶土"]
   }
+};
 
-  function generateItemsFor(type){
-    if(type==='grass') return {'草': Math.random() < 0.6 ? 1 + Math.floor(Math.random()*3) : 0};
-    if(type==='desert') return {'石': Math.random() < 0.3 ? 1 + Math.floor(Math.random()*2) : 0};
-    if(type==='mountain') return {'矿石': Math.random() < 0.6 ? 1 + Math.floor(Math.random()*3) : 0};
-    return {};
-  }
+const biomeList = document.getElementById("biome-list");
 
-  function render(){
-    mapEl.innerHTML='';
-    for(let y=0;y<SIZE;y++){
-      for(let x=0;x<SIZE;x++){
-        const c = document.createElement('div');
-        c.className='cell';
-        let t = state.tiles[y][x].type;
-        if(state.player.x===x && state.player.y===y) t='player';
-        c.classList.add(t);
-        c.textContent = tileLabel(t,state.tiles[y][x]);
-        c.addEventListener('click',()=>{ log('点击格子 '+x+','+y+' 类型:'+t); });
-        mapEl.appendChild(c);
-      }
-    }
-    document.getElementById('hp').textContent=state.hp;
-    document.getElementById('hung').textContent=state.hunger;
-    document.getElementById('water').textContent=state.water;
-    document.getElementById('lv').textContent=state.lv;
-    document.getElementById('load').textContent=state.load;
-    renderResources();
-  }
+Object.keys(biomes).forEach(name => {
+  const btn = document.createElement("div");
+  btn.className = "biome-btn";
+  btn.textContent = name;
+  btn.onclick = () => loadBiome(name);
+  // 点击地形后自动进入第一个敌对生物的战斗
+  const hostile = biomes[name].hostile;
+  if (hostile && hostile.length > 0) startBattle(hostile[0]);
+  biomeList.appendChild(btn);
+});
 
-  function tileLabel(tileType,tile){
-    if(tileType==='player') return '我';
-    if(tileType==='grass') return '草';
-    if(tileType==='desert') return '沙';
-    if(tileType==='mountain') return '山';
-    if(tileType==='water') return '水';
-    if(tileType==='wall') return '';
-    return '';
-  }
-
-  function move(dx,dy){
-    const nx = state.player.x+dx, ny = state.player.y+dy;
-    if(nx<0||nx>=SIZE||ny<0||ny>=SIZE) { log('不能移动出地图。'); return; }
-    const dest = state.tiles[ny][nx].type;
-    if(dest==='wall') { log('这里无法通过。'); return; }
-    state.player.x=nx; state.player.y=ny;
-    state.time += 1; tickAfterMove(); render();
-    log('移动到 '+nx+','+ny+' ('+dest+')');
-  }
-
-  function tickAfterMove(){
-    state.hunger = Math.max(0,state.hunger-2);
-    state.water = Math.max(0,state.water-1);
-    if(state.hunger===0||state.water===0) state.hp = Math.max(0,state.hp-5);
-    // 自动拾取少量
-    const tile = state.tiles[state.player.y][state.player.x];
-    for(const k in tile.items){
-      if(tile.items[k]>0){
-        const take = Math.min(tile.items[k],1);
-        addToInv(k,take);
-        tile.items[k]-=take;
-        log('自动拾取: '+k+' x'+take);
-      }
-    }
-  }
-
-  function explore(){
-    const tile = state.tiles[state.player.y][state.player.x];
-    if(Math.random()<0.2){
-      log('你发现了一个小补给箱: 食物x2'); addToInv('食物',2); return;
-    }
-    if(Math.random()<0.15){
-      log('遭遇小怪！ 战斗中受伤 -5HP'); state.hp=Math.max(0,state.hp-5); return;
-    }
-    log('没有发现特殊事件。');
-  }
-
-  function gather(){
-    const tile = state.tiles[state.player.y][state.player.x];
-    let found=false;
-    for(const k in tile.items){
-      if(tile.items[k]>0){
-        const amount = tile.items[k];
-        addToInv(k,amount);
-        log('采集到: '+k+' x'+amount);
-        tile.items[k]=0; found=true; state.time+=1; break;
-      }
-    }
-    if(!found) log('这里没有可采集的资源。');
-    render();
-  }
-
-  function addToInv(name,qty){
-    state.inventory[name] = (state.inventory[name]||0)+qty;
-    state.load += qty; if(state.load>20) log('负重过高，行动会受限。');
-    renderResources();
-  }
-
-  function renderResources(){
-    resourcesEl.innerHTML='';
-    for(const k in state.inventory){
-      const d = document.createElement('div'); d.className='resource'; d.textContent=k+': '+state.inventory[k];
-      resourcesEl.appendChild(d);
-    }
-  }
-
-  function save(){ localStorage.setItem('island_save',JSON.stringify(state)); log('已保存到本地。'); }
-  function load(){ const s=localStorage.getItem('island_save'); if(!s){log('没有存档');return;} state=JSON.parse(s); log('读取本地存档。'); render(); }
-
-  function log(s){ const p=document.createElement('div'); p.textContent=(new Date().toLocaleTimeString())+' '+s; logEl.prepend(p); }
-
-  // 绑定按钮
-  document.getElementById('up').addEventListener('click',()=>move(0,-1));
-  document.getElementById('down').addEventListener('click',()=>move(0,1));
-  document.getElementById('left').addEventListener('click',()=>move(-1,0));
-  document.getElementById('right').addEventListener('click',()=>move(1,0));
-  document.getElementById('explore').addEventListener('click',explore);
-  document.getElementById('gather').addEventListener('click',gather);
-  document.getElementById('save').addEventListener('click',save);
-  document.getElementById('load').addEventListener('click',load);
-
-  // 键盘移动
-  window.addEventListener('keydown',e=>{
-    if(['ArrowUp','w'].includes(e.key)) move(0,-1);
-    if(['ArrowDown','s'].includes(e.key)) move(0,1);
-    if(['ArrowLeft','a'].includes(e.key)) move(-1,0);
-    if(['ArrowRight','d'].includes(e.key)) move(1,0);
+function loadBiome(name) {
+  const b = biomes[name];
+  document.getElementById("biome-name").textContent = name;
+  document.getElementById("friendly").textContent = b.friendly.join("、");
+  
+  const hostileSpan = document.getElementById("hostile");
+  hostileSpan.innerHTML = "";
+  b.hostile.forEach(enemy => {
+    const e = document.createElement('span');
+    e.textContent = enemy + ' ';
+    e.style.cursor = 'pointer';
+    e.style.textDecoration = 'underline';
+    e.onclick = () => startBattle(enemy);
+    hostileSpan.appendChild(e);
   });
 
-  // 初始化
-  state.tiles = genMap();
-  render();
-  log('游戏已准备。欢迎来到孤岛。');
-
+  document.getElementById("resources").textContent = b.resources.join("、");
+}(name) {
+  const b = biomes[name];
+  document.getElementById("biome-name").textContent = name;
+  document.getElementById("friendly").textContent = b.friendly.join("、");
+  document.getElementById("hostile").textContent = b.hostile.join("、");
+  document.getElementById("resources").textContent = b.resources.join("、");
+}
 </script>
+
+  <!-- Battle System -->
+  <div id="battle-panel" style="display:none; margin:20px auto; width:min(600px,90%); background:#300; padding:20px; border-radius:12px; border:1px solid #a33;">
+    <h2>⚔ 战斗中</h2>
+    <div class="section"><span class="label">你的生命：</span><span id="player-hp"></span></div>
+    <div class="section"><span class="label">敌人生命：</span><span id="enemy-hp"></span></div>
+    <div class="section"><span class="label">逃跑概率：</span><span id="escape-rate"></span></div>
+    <br>
+    <button onclick="attack()">攻击</button>
+    <button onclick="tryEscape()">逃跑</button>
+  </div>
+
+<script>
+let playerHP = 100;
+let enemyHP = 0;
+let escapeRate = 0;
+
+function startBattle(enemyName) {
+  document.getElementById('battle-panel').style.display = 'block';
+  playerHP = 100;
+  enemyHP = Math.floor(Math.random() * 60) + 40;
+  escapeRate = Math.floor(Math.random() * 40) + 30;
+  updateBattleUI();
+}
+
+function updateBattleUI() {
+  document.getElementById('player-hp').textContent = playerHP;
+  document.getElementById('enemy-hp').textContent = enemyHP;
+  document.getElementById('escape-rate').textContent = escapeRate + '%';
+}
+
+function attack() {
+  const dmg = Math.floor(Math.random() * 20) + 5;
+  enemyHP -= dmg;
+  if (enemyHP <= 0) {
+    enemyHP = 0;
+    updateBattleUI();
+    alert('你击败了敌人！');
+    document.getElementById('battle-panel').style.display = 'none';
+    return;
+  }
+  const enemyDmg = Math.floor(Math.random() * 15) + 5;
+  playerHP -= enemyDmg;
+  if (playerHP <= 0) {
+    playerHP = 0;
+    updateBattleUI();
+    alert('你被击败了！');
+    document.getElementById('battle-panel').style.display = 'none';
+    return;
+  }
+  updateBattleUI();
+}
+
+function tryEscape() {
+  const roll = Math.random() * 100;
+  if (roll <= escapeRate) {
+    alert('逃跑成功！');
+    document.getElementById('battle-panel').style.display = 'none';
+  } else {
+    const enemyDmg = Math.floor(Math.random() * 15) + 5;
+    playerHP -= enemyDmg;
+    if (playerHP <= 0) {
+      playerHP = 0;
+      alert('逃跑失败并被击败！');
+      document.getElementById('battle-panel').style.display = 'none';
+      return;
+    }
+    alert('逃跑失败，受到攻击！');
+  }
+  updateBattleUI();
+}
+</script>
+
 </body>
 </html>
