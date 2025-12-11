@@ -3,15 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>迷你方块世界</title>
+    <title>文字方块生存 (MC风格)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container">
-        <div id="sky"></div>
-        <div id="world"></div>
-        <div id="player"></div>
-        <div id="time-display">时间: 白天</div>
+
+    <div class="game-container">
+        <header class="status-bar">
+            <div class="status-row">
+                <span>❤️ 生命: <b id="hp">100</b></span>
+                <span>🍗 饱食: <b id="hunger">100</b></span>
+                <span>🕒 时间: <b id="time">白天</b></span>
+            </div>
+            <div class="status-row">
+                <span>📍 坐标: [<span id="coord-x">0</span>, <span id="coord-y">0</span>]</span>
+                <span>🏞️ 地形: <b id="biome">未知</b></span>
+            </div>
+        </header>
+
+        <main class="main-display">
+            <div class="map-window">
+                <div id="grid-map" class="grid-map"></div>
+            </div>
+            
+            <div class="log-window" id="game-log">
+                <p>> 欢迎来到方块世界！醒来吧，冒险者。</p>
+            </div>
+        </main>
+
+        <section class="interaction-area">
+            <div class="inventory">
+                <h3>🎒 背包</h3>
+                <div id="inv-list" class="inv-grid">
+                    </div>
+            </div>
+            
+            <div class="controls">
+                <div class="d-pad">
+                    <div></div>
+                    <button onclick="move(0, -1)">⬆️ 北</button>
+                    <div></div>
+                    <button onclick="move(-1, 0)">⬅️ 西</button>
+                    <button onclick="action()">⛏️ 探索/采集</button>
+                    <button onclick="move(1, 0)">东 ➡️</button>
+                    <div></div>
+                    <button onclick="move(0, 1)">⬇️ 南</button>
+                    <div></div>
+                </div>
+            </div>
+        </section>
     </div>
 
     <script src="script.js"></script>
