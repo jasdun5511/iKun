@@ -70,7 +70,7 @@
   const logEl = document.getElementById('log');
   const resourcesEl = document.getElementById('resources');
 
-  const types = ['grass','desert','mountain','water','wall'];
+  const types = ['forest','plains','desert','taiga','swamp','snow','mountain','beach','ocean'];
 
   let state = {
     player:{x:Math.floor(SIZE/2),y:Math.floor(SIZE/2)},
@@ -85,10 +85,13 @@
     for(let y=0;y<SIZE;y++){
       const row = [];
       for(let x=0;x<SIZE;x++){
-        let t = 'grass';
+        // 默认随机选择生物群系，靠近中心偏向平原，靠近边缘更可能是海洋
+        let t = randChoice(types);
         const d = Math.abs(x-SIZE/2)+Math.abs(y-SIZE/2);
-        if(d>5 && Math.random()<0.6) t = randChoice(types);
-        else if(Math.random()<0.12) t = 'mountain';
+        if(d<=2 && Math.random()<0.75) t = 'plains';
+        if((x===0||y===0||x===SIZE-1||y===SIZE-1) && Math.random()<0.6) t = 'ocean';
+        // 小概率生成山脉集中区
+        if(Math.random()<0.08) t = 'mountain';
         if(x===state.player.x && y===state.player.y) t='player';
         row.push({type:t,items:generateItemsFor(t)});
       }
@@ -98,10 +101,18 @@
   }
 
   function generateItemsFor(type){
-    if(type==='grass') return {'草': Math.random() < 0.6 ? 1 + Math.floor(Math.random()*3) : 0};
-    if(type==='desert') return {'石': Math.random() < 0.3 ? 1 + Math.floor(Math.random()*2) : 0};
-    if(type==='mountain') return {'矿石': Math.random() < 0.6 ? 1 + Math.floor(Math.random()*3) : 0};
-    return {};
+    switch(type){
+      case 'forest': return {'木材': Math.random()<0.8?1+Math.floor(Math.random()*3):0};
+      case 'plains': return {'草': Math.random()<0.7?1+Math.floor(Math.random()*2):0};
+      case 'desert': return {'沙': Math.random()<0.8?1+Math.floor(Math.random()*3):0};
+      case 'taiga': return {'木材': Math.random()<0.6?1+Math.floor(Math.random()*2):0,'皮革': Math.random()<0.2?1:0};
+      case 'swamp': return {'泥': Math.random()<0.6?1+Math.floor(Math.random()*2):0,'药草': Math.random()<0.3?1:0};
+      case 'snow': return {'冰': Math.random()<0.5?1:0};
+      case 'mountain': return {'矿石': Math.random()<0.7?1+Math.floor(Math.random()*3):0};
+      case 'beach': return {'沙': Math.random()<0.9?1+Math.floor(Math.random()*2):0};
+      case 'ocean': return {'鱼': Math.random()<0.6?1+Math.floor(Math.random()*3):0};
+      default: return {};
+    }
   }
 
   function render(){
