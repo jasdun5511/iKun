@@ -1,205 +1,204 @@
 // --- 游戏配置 ---
-const MAP_SIZE = 100; // 整个世界大小 100x100
-const VIEW_DISTANCE = 4; // 视野半径 (9x9网格)
-
-// 地形类型与属性
+// 地形数据增加了更多描述性信息用于弹窗
 const BIOMES = {
-    PLAINS: { name: "草原", color: "biome-plains", resources: ["种子", "泥土"], mob: "牛" },
-    FOREST: { name: "森林", color: "biome-forest", resources: ["原木", "苹果"], mob: "僵尸" },
-    DESERT: { name: "沙漠", color: "biome-desert", resources: ["仙人掌", "沙子"], mob: "尸壳" },
-    MOUNTAIN: { name: "高山", color: "biome-mountain", resources: ["石头", "煤炭", "铁矿"], mob: "骷髅" },
-    OCEAN: { name: "海洋", color: "biome-ocean", resources: ["水", "鱼"], mob: "溺尸" }
+    PLAINS: { name: "广阔草原", color: "biome-plains", resources: ["杂草", "种子", "泥土块"], mobs: ["野牛", "史莱姆"] },
+    FOREST: { name: "幽暗森林", color: "biome-forest", resources: ["橡木", "树枝", "苹果"], mobs: ["森林狼", "僵尸"] },
+    DESERT: { name: "灼热沙漠", color: "biome-desert", resources: ["仙人掌", "沙子", "枯灌木"], mobs: ["沙虫", "尸壳"] },
+    MOUNTAIN: { name: "险峻高山", color: "biome-mountain", resources: ["石块", "铁矿石", "煤炭"], mobs: ["山地骷髅", "巨鹰"] }
 };
 
 // --- 游戏状态 ---
-let player = {
-    x: 50,
-    y: 50,
-    hp: 100,
-    hunger: 100,
-    inventory: {}
-};
-
-let gameTime = 0; // 0-11: 白天, 12-23: 黑夜
-let worldMap = {}; // 存储已生成的区块 "x,y": {type: ...}
+let player = { x: 50, y: 50, hp: 100, hunger: 100, inventory: {} };
+let gameTime = 0; // 0-11 白天, 12-23 黑夜
+let worldMap = {}; 
+let isMapEnlarged = false; // 地图是否放大状态
+let lastBiomeType = null; // 记录上一次所在的地形类型
 
 // --- 初始化 ---
 function initGame() {
-    log("游戏开始！你需要寻找资源生存下去。");
+    // 初始揭示周围地形
+    revealSurroundings(player.x, player.y);
+    // 检查并显示初始地形弹窗
+    checkNewBiome(player.x, player.y);
     updateUI();
 }
 
 // --- 核心逻辑 ---
 
-// 获取或生成某坐标的地形
+// 获取/生成地形格子数据
 function getTile(x, y) {
     const key = `${x},${y}`;
-    if (worldMap[key]) {
-        return worldMap[key];
-    }
+    if (worldMap[key]) return worldMap[key];
     
-    // 简单的伪随机生成算法
     const types = Object.keys(BIOMES);
-    // 利用坐标做随机种子，保证同一坐标地形不变
-    const hash = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453);
-    const typeIndex = Math.floor((hash - Math.floor(hash)) * types.length);
+    // 使用多个正弦函数叠加产生更有趣的伪随机地形
+    const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453 + Math.cos(x*0.5 + y*0.5)*100;
+    const typeIndex = Math.floor((Math.abs(hash) % 1) * types.length);
     
-    const newTile = {
-        type: types[typeIndex],
-        explored: false
-    };
-    worldMap[key] = newTile;
-    return newTile;
+    worldMap[key] = { type: types[typeIndex], explored: false };
+    return worldMap[key];
 }
 
-// 移动系统
+// **关键：揭示周围地形 (迷雾系统)**
+function revealSurroundings(x, y) {
+    // 中心点
+    getTile(x, y).explored = true;
+    // 东南西北
+    getTile(x+1, y).explored = true;
+    getTile(x-1, y).explored = true;
+    getTile(x, y+1).explored = true;
+    getTile(x, y-1).explored = true;
+}
+
+// **关键：检查是否进入新地形并弹窗**
+function checkNewBiome(x, y) {
+    const currentTile = getTile(x, y);
+    if (currentTile.type !== lastBiomeType) {
+        lastBiomeType = currentTile.type;
+        showBiomeModal(currentTile.type, x, y);
+        log(`你踏入了新的土地：${BIOMES[currentTile.type].name}。`);
+    }
+}
+
+// 移动动作
 function move(dx, dy) {
-    if (player.hp <= 0) return;
+    if (player.hp <= 0 || document.getElementById('biome-modal').classList.contains('hidden') === false) return;
 
     player.x += dx;
     player.y += dy;
-    
-    // 消耗饱食度
-    player.hunger -= 1;
-    if (player.hunger < 0) {
-        player.hunger = 0;
-        player.hp -= 5;
-        log("你饿得头昏眼花，生命值下降！");
-    }
+    player.hunger = Math.max(0, player.hunger - 1);
+    if (player.hunger === 0) player.hp -= 2;
 
-    // 时间流逝
     passTime();
+    // 1. 揭开迷雾
+    revealSurroundings(player.x, player.y);
+    // 2. 检查是否需要弹窗
+    checkNewBiome(player.x, player.y);
     
-    // 探索当前格子
-    const currentTile = getTile(player.x, player.y);
-    if (!currentTile.explored) {
-        currentTile.explored = true;
-        log(`你来到了 ${BIOMES[currentTile.type].name}。`);
-    }
-
     updateUI();
 }
 
-// 互动/采集系统
+// 探索/采集动作 (简化版)
 function action() {
     if (player.hp <= 0) return;
     
     const tile = getTile(player.x, player.y);
-    const biome = BIOMES[tile.type];
-    
-    // 采集逻辑
+    const biomeData = BIOMES[tile.type];
     const roll = Math.random();
     
-    if (roll > 0.6) {
-        // 采集成功
-        const item = biome.resources[Math.floor(Math.random() * biome.resources.length)];
+    if (roll > 0.5) {
+        const item = biomeData.resources[Math.floor(Math.random() * biomeData.resources.length)];
         addItem(item, 1);
-        log(`采集成功！获得了 [${item}] x1`);
-        player.hunger -= 2; // 劳动消耗更多
-    } else if (roll < 0.2) {
-        // 遇敌
-        const isNight = gameTime >= 12;
-        const enemy = biome.mob;
-        if (isNight) {
-            const dmg = Math.floor(Math.random() * 10) + 5;
-            player.hp -= dmg;
-            log(`警告！黑夜中的 [${enemy}] 袭击了你！受到了 ${dmg} 点伤害！`);
-        } else {
-            log(`你看到了一只 [${enemy}]，但它没有攻击你。`);
-        }
+        log(`采集获得: [${item}] +1`);
     } else {
-        log("你四处搜寻，但一无所获。");
-        player.hunger -= 1;
+        log("这里似乎什么都没有。");
     }
-    
+    player.hunger = Math.max(0, player.hunger - 2);
     passTime();
     updateUI();
 }
 
-// 时间系统
 function passTime() {
     gameTime = (gameTime + 1) % 24;
-    const body = document.body;
-    
-    if (gameTime === 12) {
-        log("天色变暗了，夜晚降临... (怪物开始出没)");
-        body.classList.add('night');
-    } else if (gameTime === 0) {
-        log("太阳升起，新的一天开始了。");
-        body.classList.remove('night');
-    }
 }
 
-// 背包系统
 function addItem(name, count) {
-    if (!player.inventory[name]) {
-        player.inventory[name] = 0;
-    }
-    player.inventory[name] += count;
+    player.inventory[name] = (player.inventory[name] || 0) + count;
 }
 
-// 日志系统
 function log(msg) {
     const logEl = document.getElementById('game-log');
     const p = document.createElement('p');
-    // 添加时间戳
-    const timeStr = gameTime < 12 ? `☀️${gameTime}:00` : `🌙${gameTime}:00`;
-    p.innerHTML = `<small>[${timeStr}]</small> ${msg}`;
-    logEl.prepend(p); // 最新消息在最上面
+    p.innerHTML = `<small>${gameTime < 12 ? '☀️' : '🌙'}</small> ${msg}`;
+    logEl.prepend(p);
 }
 
-// --- UI 渲染 ---
+// --- UI 交互与渲染 ---
+
+// **关键：切换地图大小**
+function toggleMapSize() {
+    const mapContainer = document.querySelector('.map-container');
+    isMapEnlarged = !isMapEnlarged;
+    
+    if (isMapEnlarged) {
+        mapContainer.classList.add('enlarged');
+        document.querySelector('.map-header').innerText = "🗺️ 大地图 (点击缩小)";
+    } else {
+        mapContainer.classList.remove('enlarged');
+        document.querySelector('.map-header').innerText = "🗺️ 小地图 (点击放大)";
+    }
+    // 重新渲染以调整视野大小
+    updateUI();
+}
+
+// 显示地形弹窗
+function showBiomeModal(biomeType, x, y) {
+    const data = BIOMES[biomeType];
+    document.getElementById('modal-title').innerText = data.name;
+    document.getElementById('modal-coords').innerText = `[${x}, ${y}]`;
+    
+    const resContainer = document.getElementById('modal-resources');
+    resContainer.innerHTML = data.resources.map(r => `<span>${r}</span>`).join('');
+    
+    const mobContainer = document.getElementById('modal-mobs');
+    mobContainer.innerHTML = data.mobs.map(m => `<span>${m}</span>`).join('');
+    
+    document.getElementById('biome-modal').classList.remove('hidden');
+}
+
+// 关闭弹窗
+function closeModal() {
+    document.getElementById('biome-modal').classList.add('hidden');
+}
+
+// 渲染 UI
 function updateUI() {
-    // 1. 状态栏
+    // 状态更新
     document.getElementById('hp').innerText = player.hp;
     document.getElementById('hunger').innerText = player.hunger;
     document.getElementById('time').innerText = gameTime < 12 ? "白天" : "黑夜";
     document.getElementById('coord-x').innerText = player.x;
     document.getElementById('coord-y').innerText = player.y;
-    
-    const currentTile = getTile(player.x, player.y);
-    document.getElementById('biome').innerText = BIOMES[currentTile.type].name;
+    document.getElementById('biome').innerText = BIOMES[getTile(player.x, player.y).type].name;
 
-    if (player.hp <= 0) {
-        log("☠️ 你死亡了！请刷新页面重来。");
-        return;
-    }
-
-    // 2. 渲染地图 (9x9网格)
+    // **关键：地图渲染 (含迷雾逻辑)**
     const mapEl = document.getElementById('grid-map');
-    mapEl.innerHTML = ''; // 清空
+    mapEl.innerHTML = '';
+    
+    // 根据地图是否放大决定视野半径
+    const viewDistance = isMapEnlarged ? 6 : 3; // 放大是 13x13, 缩小是 7x7
+    const gridSize = viewDistance * 2 + 1;
+    // 动态调整 CSS 网格列数
+    mapEl.style.gridTemplateColumns = `repeat(${gridSize}, 24px)`;
+    mapEl.style.gridTemplateRows = `repeat(${gridSize}, 24px)`;
 
-    for (let y = player.y - VIEW_DISTANCE; y <= player.y + VIEW_DISTANCE; y++) {
-        for (let x = player.x - VIEW_DISTANCE; x <= player.x + VIEW_DISTANCE; x++) {
+    for (let y = player.y - viewDistance; y <= player.y + viewDistance; y++) {
+        for (let x = player.x - viewDistance; x <= player.x + viewDistance; x++) {
             const cell = document.createElement('div');
-            cell.className = 'cell';
-            
-            // 渲染地形颜色
             const tile = getTile(x, y);
-            cell.classList.add(BIOMES[tile.type].color);
             
-            // 渲染地形文字（简写）
-            cell.innerText = BIOMES[tile.type].name[0];
-
-            // 渲染玩家
-            if (x === player.x && y === player.y) {
-                cell.classList.add('player');
-                cell.innerText = "我";
+            if (!tile.explored) {
+                // 未探索：显示迷雾
+                cell.className = 'cell fog';
+                cell.innerText = '?';
+            } else {
+                // 已探索
+                cell.className = `cell ${BIOMES[tile.type].color} explored`;
+                cell.innerText = BIOMES[tile.type].name[0];
+                
+                if (x === player.x && y === player.y) {
+                    cell.classList.add('player');
+                    cell.innerText = '我';
+                }
             }
-            
             mapEl.appendChild(cell);
         }
     }
 
-    // 3. 渲染背包
+    // 背包更新
     const invEl = document.getElementById('inv-list');
-    invEl.innerHTML = '';
-    for (const [item, count] of Object.entries(player.inventory)) {
-        const span = document.createElement('span');
-        span.innerText = `${item} (${count})`;
-        invEl.appendChild(span);
-    }
+    invEl.innerHTML = Object.entries(player.inventory).map(([k,v]) => `<span>${k} x${v}</span>`).join('');
 }
 
-// 启动
+// 启动游戏
 initGame();
