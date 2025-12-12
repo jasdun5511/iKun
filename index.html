@@ -3,80 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文字方块生存 (交互战斗版)</title>
+    <title>文字生存：荒野</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="game-container" id="main-interface">
-        <header class="status-bar">
-            <div class="status-row">
-                <span>❤️ <b id="hp">100</b></span>
-                <span>🍗 <b id="hunger">100</b></span>
-                <span>🛡️ <b id="def">0</b></span> </div>
-            <div class="status-row">
-                <span>📍 [<span id="coord-x">0</span>, <span id="coord-y">0</span>]</span>
-                <span>🕒 <b id="time">白天</b></span>
+    <div class="app-container">
+        <header class="top-bar">
+            <div class="loc-info">
+                <span>孤岛: <b id="loc-name">戈壁</b> [<span id="coord">11,3</span>]</span>
+                <span class="mini-map-btn">小地图</span>
+            </div>
+            <div class="time-info">1000年03月01日 <span id="clock-time">08:00</span></div>
+            
+            <div class="stats-grid">
+                <span>LV: 1(0%)</span>
+                <span>EXP: 0/5</span>
+                <span>理智: 100/100</span>
+                <span class="stat-hp">HP: <b id="hp">100</b>/100</span>
+                <span class="stat-hunger">饥饿: <b id="hunger">100</b>/100</span>
+                <span class="stat-water">水分: <b id="water">100</b>/100</span>
             </div>
         </header>
 
-        <main class="main-display">
-            <div class="map-container" onclick="toggleMapSize()">
-                <div class="map-header">🗺️ 当前位置: <b id="biome-name">--</b> (点击缩放)</div>
-                <div class="map-window">
-                    <div id="grid-map" class="grid-map"></div>
-                </div>
-            </div>
+        <div class="season-bar">
+            <div class="season-box">春</div>
+            <div class="weather-box">日</div>
+        </div>
 
-            <div class="scene-window">
-                <div class="scene-header">👁️ 环境列表 (点击交互)</div>
-                <div id="scene-grid" class="scene-grid">
-                    </div>
-            </div>
-            
-            <div class="mini-log" id="game-log">
-                <p>> 准备就绪。</p>
-            </div>
-        </main>
+        <div class="survive-bar">
+            <span>存活: 神性史莱姆</span>
+            <span>存活: 扭曲邪物</span>
+        </div>
 
-        <section class="interaction-area">
-            <div class="controls">
-                <div class="d-pad">
-                    <div></div>
-                    <button onclick="move(0, -1)">⬆️</button>
-                    <div></div>
-                    <button onclick="move(-1, 0)">⬅️</button>
-                    <button onclick="searchScene()">🔍 搜寻</button> <button onclick="move(1, 0)">➡️</button>
-                    <div></div>
-                    <button onclick="move(0, 1)">⬇️</button>
-                    <div></div>
-                </div>
-                <div id="inv-preview" class="inv-preview">背包: 空</div>
-            </div>
-        </section>
-    </div>
-
-    <div id="combat-ui" class="combat-overlay hidden">
-        <div class="combat-container">
-            <h2 class="combat-title">⚔️ 战斗开始 ⚔️</h2>
-            
-            <div class="fighter-zone">
-                <div class="mob-status">
-                    <div class="mob-avatar" id="combat-mob-icon">👾</div>
-                    <h3 id="combat-mob-name">怪物名字</h3>
-                    <div class="hp-bar-bg"><div id="combat-mob-hp-bar" class="hp-bar-fill" style="width: 100%"></div></div>
-                    <p>HP: <span id="combat-mob-hp">0</span> / <span id="combat-mob-max-hp">0</span></p>
-                </div>
-            </div>
-
-            <div class="combat-log" id="combat-log"></div>
-
-            <div class="combat-actions">
-                <button class="btn-attack" onclick="combatRound('attack')">⚔️ 攻击</button>
-                <button class="btn-defend" onclick="combatRound('defend')">🛡️ 防御</button>
-                <button class="btn-escape" onclick="endCombat(false)">🏃 逃跑</button>
+        <div class="filter-bar">
+            <button class="small-btn">可用逗号分割</button>
+            <div class="checkboxes">
+                <label><input type="checkbox" checked> 资源</label>
+                <label><input type="checkbox" checked> 怪物</label>
+                <label><input type="checkbox" checked> NPC</label>
             </div>
         </div>
+
+        <main class="content-area">
+            <div id="scene-grid" class="item-grid">
+                </div>
+        </main>
+
+        <div class="log-area" id="game-log">
+            <p>引导任务[查看地图]已完成</p>
+            <p>当前难度：扩展难度</p>
+            <p>系统里有安全退出按钮...</p>
+        </div>
+
+        <div class="control-panel">
+            <div class="d-pad-map">
+                <div class="d-cell empty"></div>
+                <div class="d-cell dir-btn" id="dir-n" onclick="move(0, -1)">山脉</div>
+                <div class="d-cell empty"></div>
+                
+                <div class="d-cell dir-btn" id="dir-w" onclick="move(-1, 0)">戈壁</div>
+                <div class="d-cell current-loc" id="dir-c">戈壁</div>
+                <div class="d-cell dir-btn" id="dir-e" onclick="move(1, 0)">草原</div>
+                
+                <div class="d-cell empty"></div>
+                <div class="d-cell dir-btn" id="dir-s" onclick="move(0, 1)">沙漠</div>
+                <div class="d-cell empty"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="func-btn active">功能</button>
+                <button class="func-btn">移动键盘</button>
+                <button class="func-btn" onclick="search()">探索</button>
+                <button class="func-btn">安家</button>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <div class="nav-item">物品</div>
+            <div class="nav-item">制作</div>
+            <div class="nav-item active">任务</div>
+            <div class="nav-item">地图</div>
+            <div class="nav-item">藏宝图</div>
+            <div class="nav-item">系统</div>
+        </nav>
     </div>
 
     <script src="script.js"></script>
