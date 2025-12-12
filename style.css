@@ -1,185 +1,113 @@
+/* --- 之前的基础样式保持不变，请保留上一版的代码 --- */
+/* 这里只列出新增/修改的部分 */
+
 :root {
     --bg-gray: #f2f2f2;
     --border-gray: #ccc;
-    --text-black: #333;
-    --highlight-blue: #4a90e2;
-    --hp-red: #e74c3c;
-    --hunger-yellow: #f1c40f;
-    --water-blue: #3498db;
+    /* 地形颜色 */
+    --color-plains: #7cfc00;
+    --color-forest: #228b22;
+    --color-desert: #f4a460;
+    --color-mountain: #808080;
+    --color-gobi: #d2b48c;
 }
 
 body {
-    margin: 0;
-    padding: 0;
+    margin: 0; padding: 0;
     font-family: 'Microsoft YaHei', sans-serif;
-    background-color: #333; /* 外部背景深色 */
+    background-color: #333;
     height: 100vh;
-    display: flex;
-    justify-content: center;
+    display: flex; justify-content: center;
 }
 
 .app-container {
-    width: 100%;
-    max-width: 420px;
-    height: 100%;
-    background-color: #fff;
+    width: 100%; max-width: 420px; height: 100%;
+    background-color: #fff; display: flex; flex-direction: column;
+    position: relative; z-index: 1;
+}
+
+/* ... (中间的 item-grid, d-pad-map 等样式保持上一版不变) ... */
+
+/* 为了节省篇幅，这里假设你保留了上一版的样式，下面是新增的弹窗样式 */
+
+/* --- 地图弹窗样式 --- */
+.modal {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    z-index: 999;
     display: flex;
     flex-direction: column;
-    position: relative;
+    align-items: center;
+    justify-content: center;
+}
+.modal.hidden { display: none; }
+
+.modal-content {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
 }
 
-/* 顶部信息 */
-.top-bar { padding: 5px 10px; font-size: 12px; border-bottom: 1px solid #eee; }
-.loc-info { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px; }
-.mini-map-btn { background: #3498db; color: white; padding: 2px 5px; font-size: 10px; border-radius: 2px; }
-.time-info { text-align: center; margin-bottom: 5px; color: #555; }
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 4px;
-    font-size: 11px;
-    color: #333;
+.modal-header {
+    padding: 15px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    border-bottom: 2px solid #e74c3c;
+    background: #fff;
 }
-.stat-hp { color: var(--hp-red); }
-.stat-hunger { color: #d3a900; }
-.stat-water { color: var(--water-blue); }
 
-/* 季节栏 */
-.season-bar { display: flex; height: 36px; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; }
-.season-box { width: 40px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; border-right: 1px solid #ccc; }
-.weather-box { flex: 1; background: #6fa8dc; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-
-/* 存活栏 */
-.survive-bar { display: flex; border-bottom: 1px solid #ccc; padding: 5px; font-size: 11px; color: #3498db; }
-.survive-bar span { flex: 1; text-align: center; border-right: 1px solid #eee; }
-
-/* 筛选栏 */
-.filter-bar { padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
-.small-btn { font-size: 10px; padding: 2px 5px; background: white; border: 1px solid #999; }
-.checkboxes label { font-size: 12px; margin-left: 5px; font-weight: bold; }
-.checkboxes input { vertical-align: middle; }
-
-/* --- 核心区域：模仿截图的格子列表 --- */
-.content-area {
+.big-map-container {
     flex: 1;
-    background: #f9f9f9;
-    padding: 10px;
-    overflow-y: auto;
-}
-
-.item-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-content: flex-start;
-}
-
-.grid-btn {
-    background: #fff;
-    border: 1px solid #ccc;
-    padding: 8px 12px;
-    font-size: 13px;
-    border-radius: 4px;
-    box-shadow: 1px 1px 2px rgba(0,0,0,0.05);
-    cursor: pointer;
-    white-space: nowrap;
-}
-.grid-btn:active { background: #eee; }
-/* 怪物名字设为红色，模仿截图 */
-.grid-btn.mob { color: #c0392b; border-color: #e6b0aa; }
-.grid-btn.res { color: #333; }
-
-/* 日志区 */
-.log-area {
-    height: 120px;
-    border-top: 1px solid #ccc;
-    padding: 5px 10px;
-    font-size: 12px;
-    color: #333;
-    overflow-y: auto;
-    background: #fff;
-    line-height: 1.5;
-}
-.log-area p { margin: 2px 0; }
-
-/* --- 控制面板 (关键：模仿截图底部) --- */
-.control-panel {
-    height: 100px;
-    border-top: 1px solid #ccc;
-    display: flex;
-    background: #fff;
-}
-
-/* 左侧十字地图 */
-.d-pad-map {
-    width: 100px; /* 左侧宽度 */
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    padding: 5px;
-    gap: 2px;
-    border-right: 1px solid #eee;
-}
-
-.d-cell {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 10px;
-    color: #999;
+    background: #e0e0e0;
+    overflow: auto;
 }
-.d-cell.dir-btn {
-    border: 1px solid #eee;
-    color: #d35400; /* 土黄色字 */
-    cursor: pointer;
+
+.big-grid {
+    display: grid;
+    /* 9x9 网格 */
+    grid-template-columns: repeat(9, 32px);
+    grid-template-rows: repeat(9, 32px);
+    gap: 2px;
+    border: 5px solid #fff;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    background: #fff;
 }
-.d-cell.current-loc {
-    background: #8bc34a; /* 绿色背景 */
-    color: white;
+
+.map-cell {
+    width: 32px; height: 32px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 12px;
+    color: transparent; /* 默认不显示文字 */
+    cursor: default;
+}
+
+/* 玩家位置 */
+.map-cell.player {
+    border: 2px solid red;
+    z-index: 10;
+    color: #000;
     font-weight: bold;
 }
-.d-cell.empty { background: transparent; }
 
-/* 右侧按钮 */
-.action-buttons {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    padding: 0 10px;
-}
-.func-btn {
-    background: #fff;
-    border: 1px solid #ccc;
-    padding: 6px 12px;
-    font-size: 12px;
-    color: #333;
-    border-radius: 2px;
-}
-.func-btn.active {
-    border: 1px solid #3498db;
-    color: #3498db;
-}
+/* 迷雾 */
+.map-cell.fog { background-color: #eee !important; }
 
-/* 底部导航 */
-.bottom-nav {
-    height: 45px;
-    background: #fdfdfd;
-    border-top: 1px solid #ccc;
-    display: flex;
-}
-.nav-item {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 12px;
-    color: #333;
-    border-right: 1px solid #eee;
-    cursor: pointer;
-}
-.nav-item.active {
+/* 地形颜色类 */
+.bg-PLAINS { background: var(--color-plains); }
+.bg-FOREST { background: var(--color-forest); color: white; }
+.bg-DESERT { background: var(--color-desert); }
+.bg-MOUNTAIN { background: var(--color-mountain); color: white; }
+.bg-GOBI { background: var(--color-gobi); }
+
+.modal-footer {
+    padding: 20px;
+    text-align: center;
     background: #3498db;
     color: white;
+    font-weight: bold;
+    cursor: pointer;
 }
