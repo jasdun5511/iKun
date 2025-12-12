@@ -153,20 +153,35 @@ function refreshLocation() {
 }
 
 
-// 生成当前格子的物品
+// 生成当前格子的物品 (使用新的 res 和 mobs 列表)
 function generateItems(biome) {
     currentSceneItems = [];
+    
+    // 合并资源和生物列表
+    const possibleItems = [
+        ...biome.res.map(name => ({ name: name, type: 'res' })), 
+        ...biome.mobs.map(mob => ({ name: mob.name, type: 'mob', mobType: mob.type }))
+    ];
+
     const count = 8 + Math.floor(Math.random() * 5); // 8-12个物品
     
     for(let i=0; i<count; i++) {
-        const itemBase = biome.items[Math.floor(Math.random() * biome.items.length)];
-        const isMob = ["狼", "蝎子", "巨蜥", "山羊"].some(k => itemBase.includes(k));
+        const itemTemplate = possibleItems[Math.floor(Math.random() * possibleItems.length)];
         
-        currentSceneItems.push({
-            name: itemBase,
-            count: isMob ? `LV${Math.floor(Math.random()*10)+1}` : Math.floor(Math.random()*10)+1,
-            type: isMob ? 'mob' : 'res'
-        });
+        let item = { 
+            name: itemTemplate.name,
+            type: itemTemplate.type 
+        };
+        
+        if (item.type === 'res') {
+            item.count = Math.floor(Math.random() * 10) + 3; // 3-12个资源
+        } else { // mob
+            // 假设敌对生物等级更高
+            const levelBase = itemTemplate.mobType === 'Hostile' ? 5 : 1; 
+            item.count = `LV${levelBase + Math.floor(Math.random() * 5)}`; // LV1-LV10
+        }
+        
+        currentSceneItems.push(item);
     }
 }
 
