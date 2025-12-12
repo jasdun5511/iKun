@@ -1,15 +1,15 @@
-/* --- 之前的基础样式保持不变，请保留上一版的代码 --- */
-/* 这里只列出新增/修改的部分 */
-
+/* --- 基础配置 --- */
 :root {
-    --bg-gray: #f2f2f2;
-    --border-gray: #ccc;
-    /* 地形颜色 */
+    /* 地形颜色保持不变 */
     --color-plains: #7cfc00;
     --color-forest: #228b22;
     --color-desert: #f4a460;
     --color-mountain: #808080;
     --color-gobi: #d2b48c;
+    /* 其他颜色... */
+    --text-black: #333;
+    --hp-red: #e74c3c;
+    --border-gray: #ccc;
 }
 
 body {
@@ -19,95 +19,135 @@ body {
     height: 100vh;
     display: flex; justify-content: center;
 }
-
 .app-container {
     width: 100%; max-width: 420px; height: 100%;
     background-color: #fff; display: flex; flex-direction: column;
-    position: relative; z-index: 1;
+    position: relative;
 }
 
-/* ... (中间的 item-grid, d-pad-map 等样式保持上一版不变) ... */
+/* --- 顶部/季节栏 (保持不变) --- */
+.top-bar, .season-bar, .survive-bar { /* ... 保持上一版样式 ... */ }
 
-/* 为了节省篇幅，这里假设你保留了上一版的样式，下面是新增的弹窗样式 */
-
-/* --- 地图弹窗样式 --- */
-.modal {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(255, 255, 255, 0.95);
-    z-index: 999;
+/* --- 3. 主界面核心：网格地图 --- */
+.main-map-area {
+    /* 占据主要高度 */
+    flex: 3; 
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    border-bottom: 1px solid var(--border-gray);
+    background: #f0f0f0;
 }
-.modal.hidden { display: none; }
-
-.modal-content {
-    width: 100%; height: 100%;
-    display: flex; flex-direction: column;
-}
-
-.modal-header {
-    padding: 15px;
+.map-header {
+    padding: 8px;
     text-align: center;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: bold;
+    color: var(--hp-red);
     border-bottom: 2px solid #e74c3c;
-    background: #fff;
 }
-
 .big-map-container {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #e0e0e0;
     overflow: auto;
+    padding: 5px;
 }
-
 .big-grid {
     display: grid;
     /* 9x9 网格 */
     grid-template-columns: repeat(9, 32px);
     grid-template-rows: repeat(9, 32px);
-    gap: 2px;
-    border: 5px solid #fff;
-    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    gap: 1px; /* 减小间隙 */
+    border: 1px solid #ddd;
     background: #fff;
+    /* 确保地图居中且不会被拉伸 */
+    min-width: 297px; 
+    min-height: 297px;
 }
-
 .map-cell {
     width: 32px; height: 32px;
     display: flex; justify-content: center; align-items: center;
-    font-size: 12px;
-    color: transparent; /* 默认不显示文字 */
-    cursor: default;
-}
-
-/* 玩家位置 */
-.map-cell.player {
-    border: 2px solid red;
-    z-index: 10;
-    color: #000;
+    font-size: 11px;
+    color: var(--text-black);
     font-weight: bold;
+    border: 1px solid #f0f0f0; /* 单元格分隔线 */
 }
 
-/* 迷雾 */
-.map-cell.fog { background-color: #eee !important; }
+/* 地图颜色类和玩家位置 (保持上一版代码) */
+.map-cell.player { border: 2px solid red; }
+.map-cell.fog { background-color: #eee !important; color: transparent; }
+.map-cell.bg-PLAINS { background: var(--color-plains); }
+.map-cell.bg-FOREST { background: var(--color-forest); color: white; }
+.map-cell.bg-DESERT { background: var(--color-desert); }
+.map-cell.bg-MOUNTAIN { background: var(--color-mountain); color: white; }
+.map-cell.bg-GOBI { background: var(--color-gobi); }
 
-/* 地形颜色类 */
-.bg-PLAINS { background: var(--color-plains); }
-.bg-FOREST { background: var(--color-forest); color: white; }
-.bg-DESERT { background: var(--color-desert); }
-.bg-MOUNTAIN { background: var(--color-mountain); color: white; }
-.bg-GOBI { background: var(--color-gobi); }
 
-.modal-footer {
-    padding: 20px;
-    text-align: center;
+/* --- 4. 交互详情区 (显示按钮) --- */
+.interaction-details-bar {
+    border-bottom: 1px solid var(--border-gray);
+    padding: 5px 10px;
+}
+.detail-header {
+    font-size: 12px;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 5px;
+}
+.item-grid-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 80px; /* 限制高度，防止挤压其他元素 */
+    overflow-y: auto;
+}
+.grid-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+}
+.grid-btn.mob { color: #c0392b; border-color: #e6b0aa; }
+.grid-btn.res { color: #333; border: 1px solid #ccc; background: #fff; }
+
+/* --- 5. 日志区 (高度和样式调整) --- */
+.log-area {
+    height: 60px; /* 缩小日志区 */
+    padding: 5px 10px;
+    font-size: 11px;
+    overflow-y: auto;
+}
+
+/* --- 6. 控制区 (简化为方向键) --- */
+.control-panel {
+    height: 80px; /* 调整高度 */
+    border-top: 1px solid #ccc;
+    display: flex;
+    background: #fff;
+}
+.d-pad-only {
+    width: 100px; 
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 5px;
+    gap: 2px;
+    border-right: 1px solid #eee;
+}
+.d-btn {
+    border: 1px solid #ccc;
+    background: #f0f0f0;
+    cursor: pointer;
+    font-size: 16px;
+}
+.d-cell.current-loc {
     background: #3498db;
     color: white;
     font-weight: bold;
-    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
+.action-buttons { flex: 1; /* ... 保持上一版样式 ... */ }
+
+/* --- 战斗 UI --- (保持上一版代码，默认隐藏) */
+.combat-overlay { /* ... 保持上一版样式 ... */ }
