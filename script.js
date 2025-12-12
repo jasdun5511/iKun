@@ -168,13 +168,14 @@ function closeMap() {
     log("关闭了全屏地图。");
 }
 
+// ... (函数开头不变) ...
+
 function renderBigMap() {
     const mapEl = document.getElementById('big-grid');
     if (!mapEl) return;
     mapEl.innerHTML = '';
     
-    // 渲染 9x9 视野
-    const range = 4; // 中心向外扩4格
+    const range = 4; // 9x9 视野
     
     for (let y = player.y - range; y <= player.y + range; y++) {
         for (let x = player.x - range; x <= player.x + range; x++) {
@@ -184,7 +185,11 @@ function renderBigMap() {
             if (exploredMap[key]) {
                 const type = getBiome(x, y);
                 cell.className = `map-cell ${BIOMES[type].code}`;
-                cell.innerText = BIOMES[type].name[0]; // 显示首字
+                
+                // *** 核心修改：确保显示至少两个字 ***
+                let name = BIOMES[type].name;
+                // 如果地形名只有一个字，我们至少显示前两个字 (这里我们假设所有地形名都至少有两个字，如果不是，需要截取)
+                cell.innerText = name.substring(0, 2); 
             } else {
                 cell.className = 'map-cell fog'; // 迷雾
                 cell.innerText = '';
@@ -192,13 +197,15 @@ function renderBigMap() {
 
             if (x === player.x && y === player.y) {
                 cell.classList.add('player');
-                cell.innerText = BIOMES[getBiome(x, y)].name; // 玩家位置显示完整地形名 (模仿截图)
+                // 玩家所在格，显示完整的两个字地形名
+                cell.innerText = BIOMES[getBiome(x, y)].name.substring(0, 2); 
             }
             
             mapEl.appendChild(cell);
         }
     }
 }
+
 
 // 启动
 init();
