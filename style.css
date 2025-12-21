@@ -183,3 +183,121 @@ body {
     background: #3498db;
     color: white;
 }
+
+/* --- 地形颜色定义（如果原始文件中没有） --- */
+/* 如果原始文件已有，请忽略此段 */
+:root {
+    /* 假设地图使用的颜色，保持一致性 */
+    --color-plains: #7cfc00;
+    --color-forest: #228b22;
+    --color-desert: #f4a460;
+    --color-mountain: #808080;
+    --color-gobi: #d2b48c;
+    /* 新增其他地形颜色（模仿 1000024821.jpg） */
+    --color-river: #6ab0e5;
+    --color-lake: #4a90e2;
+    --color-swamp: #8c8f43; 
+}
+
+
+/* --- 地图弹窗样式 (模仿截图 1000024819.jpg) --- */
+.modal {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    /* 使用白色背景，而非半透明，更接近截图 */
+    background: #ffffff; 
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.modal.hidden { display: none; }
+
+.modal-content {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+}
+
+.modal-header {
+    padding: 15px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    /* 模仿截图的“关闭地图”文字 */
+}
+
+.big-map-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f0f0f0; /* 背景微灰 */
+    overflow: auto;
+}
+
+.big-grid {
+    display: grid;
+    /* 9x9 视野 */
+    grid-template-columns: repeat(9, 36px);
+    grid-template-rows: repeat(9, 36px);
+    gap: 1px;
+    border: 1px solid #ddd;
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.map-cell {
+    width: 36px; height: 36px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 11px;
+    color: #333; 
+    font-weight: bold;
+    border: 1px solid #eee; /* 格子内线 */
+}
+
+/* 玩家位置和迷雾 */
+.map-cell.player { 
+    border: 2px solid red; 
+    background: #8bc34a !important; /* 绿色，模仿截图 1000024819.jpg */
+    color: white;
+}
+.map-cell.fog { 
+    background-color: #eee !important; /* 迷雾/未探索区域 */
+    color: transparent; 
+}
+
+/* 地形颜色类 */
+.map-cell.bg-PLAINS { background: var(--color-plains); }
+.map-cell.bg-FOREST { background: var(--color-forest); color: white; }
+.map-cell.bg-DESERT { background: var(--color-desert); }
+.map-cell.bg-MOUNTAIN { background: var(--color-mountain); color: white; }
+.map-cell.bg-GOBI { background: var(--color-gobi); }
+.map-cell.bg-RIVER { background: var(--color-river); }
+.map-cell.bg-LAKE { background: var(--color-lake); }
+.map-cell.bg-SWAMP { background: var(--color-swamp); }
+
+.modal-footer {
+    padding: 10px;
+    text-align: center;
+    background: #f9f9f9;
+    color: #666;
+    font-size: 12px;
+    cursor: pointer;
+    border-top: 1px solid #ddd;
+}
+
+.map-controls {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+    background: #f9f9f9;
+}
+.map-controls button {
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 3px;
+}
