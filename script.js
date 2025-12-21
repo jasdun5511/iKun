@@ -1,25 +1,36 @@
 // --- 配置 ---
 const BIOMES = {
-    PLAINS: { name: "草原", color: "#7cfc00", items: ["草丛", "野花", "兔子"] },
-    FOREST: { name: "森林", color: "#228b22", items: ["树木", "浆果", "蘑菇", "森林狼"] },
-    DESERT: { name: "沙漠", color: "#f4a460", items: ["仙人掌", "枯木", "蝎子"] },
-    MOUNTAIN: { name: "山脉", color: "#808080", items: ["石块", "铁矿石", "山羊"] },
-    GOBI: { name: "戈壁", color: "#d2b48c", items: ["石块", "沙硕", "巨蜥"] }
+    PLAINS: { name: "草原", code: "bg-PLAINS", items: ["草丛", "野花", "兔子"] },
+    FOREST: { name: "森林", code: "bg-FOREST", items: ["树木", "浆果", "蘑菇", "森林狼"] },
+    DESERT: { name: "沙漠", code: "bg-DESERT", items: ["仙人掌", "枯木", "蝎子"] },
+    MOUNTAIN: { name: "山脉", code: "bg-MOUNTAIN", items: ["石块", "铁矿石", "山羊"] },
+    GOBI: { name: "戈壁", code: "bg-GOBI", items: ["石块", "沙硕", "巨蜥"] },
+    RIVER: { name: "河流", code: "bg-RIVER", items: ["水", "鱼", "芦苇"] }, // 新增
+    LAKE: { name: "湖泊", code: "bg-LAKE", items: ["清水", "水草"] }, // 新增
 };
 
+// 新增：地图探索状态
+let exploredMap = {}; 
 let player = { x: 11, y: 3, hp: 100, hunger: 100, water: 100 };
-let currentSceneItems = []; // 当前格子的物品列表
+let currentSceneItems = [];
 
-// --- 核心工具：地形生成 ---
-function getBiome(x, y) {
-    // 简单的伪随机，保证固定坐标地形不变
-    const val = Math.abs(Math.sin(x * 12.3 + y * 4.5));
-    if (val < 0.2) return "PLAINS";
-    if (val < 0.4) return "FOREST";
-    if (val < 0.6) return "GOBI";
-    if (val < 0.8) return "MOUNTAIN";
-    return "DESERT";
+// --- 核心工具：地形生成 (使用更复杂的伪随机) ---
+function getBiomeType(x, y) {
+    const hash = Math.abs(Math.sin(x * 12.9898 + y * 4.1414)) * 1000;
+    if (hash < 200) return "PLAINS";
+    if (hash < 400) return "FOREST";
+    if (hash < 550) return "GOBI";
+    if (hash < 700) return "MOUNTAIN";
+    if (hash < 850) return "DESERT";
+    if (hash < 900) return "RIVER";
+    return "LAKE"; // 稀有地形
 }
+
+// 确保原始的 getBiome 函数被 getBiomeType 替换
+function getBiome(x, y) {
+    return getBiomeType(x, y);
+}
+
 
 // --- 初始化 ---
 function init() {
@@ -40,9 +51,18 @@ function move(dx, dy) {
     log(`移动到了 [${player.x}, ${player.y}]`);
 }
 
-// --- 刷新所有界面 ---
+// --- 刷新所有界面 (新增地图探索逻辑) ---
 function refreshLocation() {
-    // 1. 更新顶部信息
+    // 1. 记录当前坐标及周围已探索
+    const currentKey = `${player.x},${player.y}`;
+    exploredMap[currentKey] = true;
+    // 简单的视野机制：周围一圈也被点亮
+    exploredMap[`${player.x+1},${player.y}`] = true;
+    exploredMap[`${player.x-1},${player.y}`] = true;
+    exploredMap[`${player.x},${player.y+1}`] = true;
+    exploredMap[`${player.x},${player.y-1}`] = true;
+
+    // 2. 更新顶部信息
     const type = getBiome(player.x, player.y);
     const biome = BIOMES[type];
     document.getElementById('loc-name').innerText = biome.name;
@@ -51,13 +71,19 @@ function refreshLocation() {
     document.getElementById('hunger').innerText = player.hunger;
     document.getElementById('water').innerText = player.water;
 
-    // 2. 生成并渲染中间的资源按钮 (模拟截图中的格子)
+    // 3. 生成并渲染中间的资源按钮
     generateItems(biome);
     renderScene();
 
-    // 3. 更新左下角十字微型地图
+    // 4. 更新左下角十字微型地图
     updateMiniMap();
+    
+    // 5. 如果地图弹窗打开，刷新它
+    if (!document.getElementById('map-modal').classList.contains('hidden')) {
+        renderBigMap();
+    }
 }
+
 
 // 生成当前格子的物品
 function generateItems(biome) {
